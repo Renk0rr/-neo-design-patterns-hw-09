@@ -1,89 +1,30 @@
-# neo-design-patterns-hw-08
+# neo-design-patterns-hw-09
 
-Було додано реактивний шар на основі патерну Observer для відстеження процесу рендерингу.
+1. Патерн Шаблонний метод
 
-1. Структура проекту:
-   src/
-   ├── interfaces/
-   │ ├── DocNode.ts  
-   │ ├── DocRenderer.ts  
-   │ ├── RenderContext.ts  
-   │ └── RenderEventSubscriber.ts
-   ├── renderers/
-   │ ├── BaseRenderer.ts
-   │ ├── HTMLRenderer.ts
-   │ ├── MarkdownRenderer.ts
-   │ └── PlainTextRenderer.ts
-   ├── nodes/
-   │ ├── Paragraph.ts  
-   │ ├── List.ts  
-   │ └── Section.ts  
-   ├── factories/
-   │ └── RendererFactory.ts
-   ├── subscribers/
-   │ ├── RenderLoggerSubscriber.ts  
-   │ ├── SummaryCollector.ts
-   │ └── PerformanceSubscriber.ts
-   ├── RenderEventPublisher.ts
-   └── main.ts
+Базовий клас `DataExporter` визначає фіксований алгоритм експорту у методі `export()`:
 
-2. Встановлення:
+- `load()` — завантаження даних з API
+- `transform()` — фільтрація полів, сортування за іменем
+- `beforeRender()` — hook (порожній за замовчуванням)
+- `render()` — абстрактний, форматування у цільовий формат
+- `afterRender()` — hook (порожній за замовчуванням)
+- `save()` — абстрактний, збереження файлу
+
+Підкласи `CsvExporter`, `JsonExporter`, `XmlExporter` реалізують лише `render()` і `save()`. `XmlExporter` також перевизначає `afterRender()`, додаючи коментар з часом генерації.
+
+2. Додавання нового формату
+
+- Створіть файл `src/exporters/YourExporter.ts`.
+- Успадкуйте від `DataExporter`.
+- Реалізуйте `render()` та `save()`.
+- За потреби перевизначте `beforeRender()` або `afterRender()`.
+
+3. Ітератори
+
+Кожен ітератор (`CsvIterator`, `JsonIterator`, `XmlIterator`) читає готовий файл, парсить його та реалізує `[Symbol.iterator]()`, що дозволяє використовувати `for...of`.
+
+4. Запуск
    npm install
-
-3. Вивід у консоль
-   npx ts-node src/main.ts markdown
-   npx ts-node src/main.ts html
-   npx ts-node src/main.ts plain
-
-4. Збереження у файл
-   npx ts-node src/main.ts markdown output.md
-   npx ts-node src/main.ts html output.html
-   npx ts-node src/main.ts plain output.txt
-
-5. Приклад виводу
-   [Log] Rendered Paragraph (44 chars)
-   [Log] Rendered Paragraph (53 chars)
-   [Log] Rendered List (3 items)
-   [Log] Rendered Section ("Composite", level 2)
-   [Log] Rendered Paragraph (34 chars)
-   [Log] Rendered List (2 items)
-   [Log] Rendered Section ("Bridge", level 2)
-   [Log] Rendered Section ("Основні патерни", level 2)
-   [Log] Rendered Section ("Структурні патерни", level 1)
-   [Summary] Rendered 4 sections, 3 paragraphs, 2 lists
-   [Performance] Total render time: 3ms
-
-6. Як реалізовано патерн Observer
-   `RenderEventPublisher` є статичним класом, який зберігає список підписників і розсилає
-   їм події. Кожен елемент документа (`Paragraph`, `List`, `Section`) після завершення
-   свого методу `render()` викликає `RenderEventPublisher.notify(context)`, передаючи
-   об'єкт `RenderContext` з деталями події (тип елемента, вміст, рівень заголовка,
-   кількість пунктів у списку та час рендерингу). Кожен підписник реалізує інтерфейс `RenderEventSubscriber` з методом `update(context)`.
-
-7. Підключення підписників у main.ts
-   const logger = new RenderLoggerSubscriber();
-   const summary = new SummaryCollector();
-   const perf = new PerformanceSubscriber();
-
-RenderEventPublisher.subscribe(logger);
-RenderEventPublisher.subscribe(summary);
-RenderEventPublisher.subscribe(perf);
-
-8. Як додати нового підписника
-   # Реалізаія інтерфейсу `RenderEventSubscriber`:
-
-import { RenderEventSubscriber } from "../interfaces/RenderEventSubscriber";
-import { RenderContext } from "../interfaces/RenderContext";
-
-export class MyCustomSubscriber implements RenderEventSubscriber {
-update(context: RenderContext): void {
-if (context.type === "List") {
-console.log(`[Custom] List with ${context.items?.length} items detected`);
-}
-}
-}
-
-# Підключення інтерфейсу в main.ts:
-
-const custom = new MyCustomSubscriber();
-RenderEventPublisher.subscribe(custom);
+   npx ts-node ./src/main.ts
+   npx ts-node ./src/main-iterate.ts
